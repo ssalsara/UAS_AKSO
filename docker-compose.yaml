@@ -1,0 +1,74 @@
+version: '3.9'
+services:
+  nginx:
+    build:
+      context: ./nginx
+    container_name: nginx_service
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/html:/usr/share/nginx/html
+      - ./nginx/css:/usr/share/nginx/css
+    networks:
+      - my_network  # Pastikan ini konsisten
+
+  postgres:
+    image: postgres:15
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: human
+      POSTGRES_PASSWORD: human
+      POSTGRES_DB: exampledb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - postgres_network
+
+  pgadmin:
+    image: dpage/pgadmin4:6
+    container_name: pgadmin_container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: try123@example.com
+      PGADMIN_DEFAULT_PASSWORD: try123
+    ports:
+      - "8081:80" # Akses PGAdmin melalui http://localhost:8081
+    networks:
+      - postgres_network
+    configs:
+      - source: pgadmin_config
+        target: /pgadmin_config
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    container_name: rabbitmq-broker
+    ports:
+      - "15672:15672"  
+    networks:
+      - my_network
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-monitoring
+    ports:
+      - "4000:3000"  # Format daftar yang benar
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - my_network
+
+configs: 
+  nginx_config:
+    file: ./nginx.config
+  pgadmin_config:
+    file: ./pgadmin-custom-config.conf
+networks:
+  my_network:  
+    driver: bridge
+  postgres_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  grafana_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
